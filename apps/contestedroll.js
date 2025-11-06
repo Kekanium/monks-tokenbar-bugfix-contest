@@ -3,9 +3,15 @@ import { ApplicationSheetConfig } from "./sheet-configure.js";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 export class ContestedRollApp extends HandlebarsApplicationMixin(ApplicationV2) {
+    FirstStatContest;
+    SecondStatContest;
+
     constructor(entries, options = {}) {
         super(options);
         this.opts = options;
+
+        this.FirstStatContest = ['ability', 'str'];
+        this.SecondStatContest = ['ability', 'str'];
 
         this.rollmode = options?.rollmode || options?.rollMode || (game.user.getFlag("monks-tokenbar", "lastmodeCR") || 'roll');
         if (!["roll", "gmroll", "blindroll", "selfroll"].includes(this.rollmode))
@@ -65,7 +71,7 @@ export class ContestedRollApp extends HandlebarsApplicationMixin(ApplicationV2) 
             configureSheet: ContestedRollApp.onConfigureSheet,
         },
         position: {
-            width: 450
+            width: 500
         }
     };
 
@@ -166,6 +172,16 @@ export class ContestedRollApp extends HandlebarsApplicationMixin(ApplicationV2) 
     async doRequestRoll(event, roll) {
         let msg = null;
         if (this.entries[0].token != undefined && this.entries[1].token != undefined) {
+            this.entries[0].request = {
+                type: this.FirstStatContest[0],
+                key: this.FirstStatContest[1],
+                slug: this.FirstStatContest[0] + ':' + this.FirstStatContest[1]
+            }
+            this.entries[1].request = {
+                type: this.SecondStatContest[0],
+                key: this.SecondStatContest[1],
+                slug: this.SecondStatContest[0] + ':' + this.SecondStatContest[1]
+            }
             let msgEntries = this.entries.map((item, index) => {
                 if (index > 1)
                     return null;
@@ -294,6 +310,20 @@ export class ContestedRollApp extends HandlebarsApplicationMixin(ApplicationV2) 
         $('.small-button', this.element).each(function () {
             $(this).attr("data-tooltip", $("span", this).html());
             $("span", this).remove();
+        });
+
+        let that = this;
+
+        $('#contestFirstStat', this.element).change(function () {
+            that.entries[0].request[0].slug = $(this).find('option:selected').val();
+            that.FirstStatContest = $(this).find('option:selected').val().split(':');
+            that.render(true);
+        });
+
+        $('#contestSecondStat', this.element).change(function () {
+            that.entries[1].request[0].slug = $(this).find('option:selected').val();
+            that.SecondStatContest = $(this).find('option:selected').val().split(':');
+            that.render(true);
         });
 
         // Not sure why the contested roll value isn't being displayed.  The value is there, but the select isn't displaying it.
